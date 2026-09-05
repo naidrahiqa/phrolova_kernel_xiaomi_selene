@@ -38,7 +38,7 @@ CONFIG_RD_LZ4=y
 # CONFIG_UID16 is not set
 CONFIG_SYSCTL_SYSCALL=y
 # CONFIG_KALLSYMS_BASE_RELATIVE is not set
-# CONFIG_USERFAULTFD is not set
+CONFIG_USERFAULTFD=y
 # CONFIG_VM_EVENT_COUNTERS is not set
 # CONFIG_SLUB_DEBUG is not set
 CONFIG_SLAB_MERGE_DEFAULT=y
@@ -80,7 +80,7 @@ CONFIG_ZSMALLOC=y
 # CONFIG_MITIGATE_SPECTRE_BRANCH_HISTORY is not set
 CONFIG_ARM64_LSE_ATOMICS=y
 CONFIG_RANDOMIZE_BASE=y
-CONFIG_CMDLINE="vmalloc=496M slub_max_order=0 vm.swappiness=100 vm.vfs_cache_pressure=75 vm.min_free_kbytes=131072 vm.dirty_background_ratio=5 vm.dirty_ratio=15 vm.dirty_writeback_centisecs=300 vm.dirty_expire_centisecs=1000 vm.page-cluster=0 block_dev.read_ahead_kb=256 "
+CONFIG_CMDLINE="vmalloc=496M slub_max_order=0 vm.swappiness=100 vm.vfs_cache_pressure=100 vm.min_free_kbytes=32768 vm.dirty_background_ratio=5 vm.dirty_ratio=10 vm.dirty_writeback_centisecs=300 vm.dirty_expire_centisecs=1000 vm.page-cluster=0 block_dev.read_ahead_kb=256 "
 CONFIG_CMDLINE_EXTEND=y
 # CONFIG_EFI is not set
 CONFIG_BUILD_ARM64_APPENDED_DTB_IMAGE=y
@@ -553,7 +553,7 @@ CONFIG_NETFILTER_ADVANCED=y
 CONFIG_NF_CONNTRACK=y
 CONFIG_IP_NF_IPTABLES=y
 CONFIG_IP_NF_FILTER=y
-# CONFIG_NF_TABLES is not set
+CONFIG_NF_TABLES=y
 CONFIG_NETFILTER_XT_TARGET_MASQUERADE=y
 CONFIG_NETFILTER_XT_TARGET_TCPMSS=y
 CONFIG_NF_CONNTRACK_NETLINK=y
