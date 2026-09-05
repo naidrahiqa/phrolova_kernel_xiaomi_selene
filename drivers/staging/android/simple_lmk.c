@@ -13,12 +13,13 @@
 #include <linux/delay.h>
 #include <linux/kthread.h>
 #include <linux/freezer.h>
+#include <linux/jiffies.h>
 
-#define SIMPLE_LMK_VERSION "1.0.5"
+#define SIMPLE_LMK_VERSION "1.0.6"
 #define LMK_DEFAULT_MIN_FREE	500
 #define LMK_CHECK_INTERVAL_MS	100
-#define LMK_KILL_BATCH		8
-#define LMK_MAX_KILLS_PER_CHECK	32
+#define LMK_MAX_KILLS_PER_CHECK	8
+#define LMK_BOOT_DELAY_SECS	15
 
 static unsigned long lmk_min_free_mb = LMK_DEFAULT_MIN_FREE;
 static unsigned long lmk_check_interval = LMK_CHECK_INTERVAL_MS;
@@ -27,6 +28,32 @@ static bool lmk_enabled = true;
 
 static struct task_struct *lmk_task;
 static struct kobject *lmk_kobj;
+static unsigned long lmk_boot_time;
+
+static bool lmk_is_critical_process(struct task_struct *p)
+{
+	static const char * const critical_names[] = {
+		"system_server",
+		"zygote64",
+		"zygote",
+		"surfaceflinger",
+		"servicemanager",
+		"vold",
+		"installd",
+		"logd",
+		"lmkd",
+		"adbd",
+		"shell",
+		NULL
+	};
+	const char **name;
+
+	for (name = critical_names; *name; name++) {
+		if (strncmp(p->comm, *name, TASK_COMM_LEN) == 0)
+			return true;
+	}
+	return false;
+}
 
 static unsigned long lmk_get_free_mb(void)
 {
@@ -52,8 +79,12 @@ static struct task_struct *lmk_find_best_victim(void)
 			continue;
 		if (is_global_init(p))
 			continue;
+		if (lmk_is_critical_process(p))
+			continue;
 
 		sig = p->signal;
+		if (!sig)
+			continue;
 		oom_score_adj = sig->oom_score_adj;
 		if (oom_score_adj < 0)
 			continue;
@@ -101,7 +132,7 @@ static int lmk_do_check(void *data)
 	while (!kthread_should_stop()) {
 		set_current_state(TASK_RUNNING);
 
-		if (lmk_enabled) {
+		if (lmk_enabled && time_after(jiffies, lmk_boot_time)) {
 			free_mb = lmk_get_free_mb();
 
 			if (free_mb < lmk_min_free_mb) {
@@ -217,6 +248,8 @@ static int __init simple_lmk_init(void)
 		return ret;
 	}
 
+	lmk_boot_time = jiffies + (LMK_BOOT_DELAY_SECS * HZ);
+
 	lmk_task = kthread_run(lmk_do_check, NULL, "simple_lmk");
 	if (IS_ERR(lmk_task)) {
 		sysfs_remove_group(lmk_kobj, &lmk_attr_group);
@@ -224,8 +257,8 @@ static int __init simple_lmk_init(void)
 		return PTR_ERR(lmk_task);
 	}
 
-	pr_info("simple_lmk: v%s loaded (min_free=%luMB, check_interval=%lums)\n",
-		SIMPLE_LMK_VERSION, lmk_min_free_mb, lmk_check_interval);
+	pr_info("simple_lmk: v%s loaded (min_free=%luMB, check_interval=%lums, boot_delay=%ds)\n",
+		SIMPLE_LMK_VERSION, lmk_min_free_mb, lmk_check_interval, LMK_BOOT_DELAY_SECS);
 	return 0;
 }
 
