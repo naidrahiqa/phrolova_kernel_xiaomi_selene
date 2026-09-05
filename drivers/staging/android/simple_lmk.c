@@ -46,7 +46,7 @@ static bool lmk_is_critical_process(struct task_struct *p)
 		"shell",
 		NULL
 	};
-	const char **name;
+	const char * const *name;
 
 	for (name = critical_names; *name; name++) {
 		if (strncmp(p->comm, *name, TASK_COMM_LEN) == 0)
